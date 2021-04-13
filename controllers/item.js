@@ -23,34 +23,19 @@ exports.addItem = asyncHandler(async (req, res, next) => {
 //-------------------Display all items
 
 exports.getItems = asyncHandler(async (req, res, next) => {
-    Item.find()
-    .then(function(item){
-        res.status(200).json(item)
-    })
-    .catch(function(er){
-        res.status(500).json({error : e})
-    })
-  });
+  const item = await Item.find({});
 
-  // -----------------FIND Item BY Drink-------------------
+  res.status(201).json({
+    success: true,
+    count: item.length,
+    data: item,
+  });
+});
+
+// -----------------FIND Item BY Drink-------------------
 
 exports.getAllDrinks = asyncHandler(async (req, res, next) => {
-    const item = await Item.find({itemType:"Drink"})
-  
-    if (!item) {
-      return next(new ErrorResponse("Item not found"), 404);
-    }
-  
-    res.status(200).json({
-      success: true,
-      data: item,
-    });
-  });
-
-    // -----------------FIND Item BY Vege-------------------
-
-exports.getAllVege = asyncHandler(async (req, res, next) => {
-  const item = await Item.find({itemType:"Vege"})
+  const item = await Item.find({ itemType: "Drink" })
 
   if (!item) {
     return next(new ErrorResponse("Item not found"), 404);
@@ -62,145 +47,123 @@ exports.getAllVege = asyncHandler(async (req, res, next) => {
   });
 });
 
-    // -----------------FIND Item BY Non-vege-------------------
+// -----------------FIND Item BY Vege-------------------
 
-    exports.getAllNonVege = asyncHandler(async (req, res, next) => {
-      const item = await Item.find({itemType:"Non-vege"})
-    
-      if (!item) {
-        return next(new ErrorResponse("Item not found"), 404);
-      }
-    
-      res.status(200).json({
-        success: true,
-        data: item,
-      });
-    });
+exports.getAllVege = asyncHandler(async (req, res, next) => {
+  const item = await Item.find({ itemType: "Vege" })
+
+  if (!item) {
+    return next(new ErrorResponse("Item not found"), 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    data: item,
+  });
+});
+
+// -----------------FIND Item BY Non-vege-------------------
+
+exports.getAllNonVege = asyncHandler(async (req, res, next) => {
+  const item = await Item.find({ itemType: "Non-vege" })
+
+  if (!item) {
+    return next(new ErrorResponse("Item not found"), 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    data: item,
+  });
+});
 
 
 
-  // -----------------DELETE customer------------------------
+// -----------------DELETE customer------------------------
 
 exports.deleteCustomer = asyncHandler(async (req, res, next) => {
-    const customer = await Item.findById(req.params.id);
-  
-    if (!customer) {
-      return next(new ErrorResponse(`No student found `), 404);
-    }
-  
-    await customer.remove();
-  
-    res.status(200).json({
-      success: true,
-      count: customer.length,
-      data: {},
-    });
+  const customer = await Item.findById(req.params.id);
+
+  if (!customer) {
+    return next(new ErrorResponse(`No student found `), 404);
+  }
+
+  await customer.remove();
+
+  res.status(200).json({
+    success: true,
+    count: customer.length,
+    data: {},
   });
- 
-  exports.itemUpdate = asyncHandler(async (req, res, next) => {
-    const { id,itemName,itemType,itemImage, itemPrice, itemRating } = req.body;
-  
-    if (!item) {
-      return next(new ErrorResponse(`No item found `), 404);
-    }
-  
-    await Item.updateOne({_id : id}, {itemName : itemName, itemType : itemType})
-    .then(function(result){
-        res.status(200).json({message: "Item Updated!!"})
+});
+
+
+
+exports.itemUpdate = asyncHandler(async (req, res, next) => {
+  const { id, itemName, itemType, itemImage, itemPrice, itemRating } = req.body;
+
+  if (!item) {
+    return next(new ErrorResponse(`No item found `), 404);
+  }
+
+  await Item.updateOne({ _id: id }, { itemName: itemName, itemType: itemType })
+    .then(function (result) {
+      res.status(200).json({ message: "Item Updated!!" })
     })
-    .catch(function(e){
-        res.status(200).json({error: e})
+    .catch(function (e) {
+      res.status(200).json({ error: e })
     })
-  
-    // res.status(200).json({
-    //   success: true,
-    //   count: item.length,
-    //   data: {},
-    // });
-  });
 
-  // // -----------------UPDATE STUDENT------------------------
-  // exports.updateStudent = asyncHandler(async (req, res, next) => {
-  //   const student = await Student.findById(req.params.id);
-  
-  //   if (!student) {
-  //     return next(new ErrorResponse(`No student found `), 404);
-  //   }
-  
-  //   await student.upda
-  
-  //   res.status(200).json({
-  //     success: true,
-  //     count: student.length,
-  //     data: {},
-  //   });
-  // });
+});
 
-  //Update Student--------------------------
-// exports.updateStudent=asyncHandler(async(req,res,next)=>{
-//   const student = await Student.findById(req.params.id);
-  
-  
-//   if (!student) {
-//     return next(new ErrorResponse("Student not found"), 404);
-//   }
-//   await student.updateOne({_id : id}, {fullName : fullName, lastName : lastName});
-//   res.status(200).json({
-//     success: true,
-//     data: student,
-//   });
-
-
-// })
-
-  // ------------------UPLOAD IMAGE-----------------------
+// ------------------UPLOAD IMAGE-----------------------
 
 exports.ItemPhotoUpload = asyncHandler(async (req, res, next) => {
-    const item = await Item.findById(req.params.id);
-  
-    console.log(item);
-    if (!item) {
-      return next(new ErrorResponse(`No student found with ${req.params.id}`), 404);
+  const item = await Item.findById(req.params.id);
+
+  console.log(item);
+  if (!item) {
+    return next(new ErrorResponse(`No student found with ${req.params.id}`), 404);
+  }
+
+
+  if (!req.files) {
+    return next(new ErrorResponse(`Please upload a file`, 400));
+  }
+
+  const file = req.files.file;
+
+  // Make sure the image is a photo and accept any extension of an image
+  // if (!file.mimetype.startsWith("image")) {
+  //   return next(new ErrorResponse(`Please upload an image`, 400));
+  // }
+
+  // Check file size
+  if (file.size > process.env.MAX_FILE_UPLOAD) {
+    return next(
+      new ErrorResponse(
+        `Please upload an image less than ${process.env.MAX_FILE_UPLOAD}`,
+        400
+      )
+    );
+  }
+
+  file.name = `photo_${item.id}${path.parse(file.name).ext}`;
+
+  file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async (err) => {
+    if (err) {
+      console.err(err);
+      return next(new ErrorResponse(`Problem with file upload`, 500));
     }
-  
-  
-    if (!req.files) {
-      return next(new ErrorResponse(`Please upload a file`, 400));
-    }
-  
-    const file = req.files.file;
-  
-    // Make sure the image is a photo and accept any extension of an image
-    // if (!file.mimetype.startsWith("image")) {
-    //   return next(new ErrorResponse(`Please upload an image`, 400));
-    // }
-  
-    // Check file size
-    if (file.size > process.env.MAX_FILE_UPLOAD) {
-      return next(
-        new ErrorResponse(
-          `Please upload an image less than ${process.env.MAX_FILE_UPLOAD}`,
-          400
-        )
-      );
-    }
-  
-    file.name = `photo_${item.id}${path.parse(file.name).ext}`;
-  
-    file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async (err) => {
-      if (err) {
-        console.err(err);
-        return next(new ErrorResponse(`Problem with file upload`, 500));
-      }
-  
-      //insert the filename into database
-      await Item.findByIdAndUpdate(req.params.id, {
-        photo: file.name,
-      });
-    });
-  
-    res.status(200).json({
-      success: true,
-      data: file.name,
+
+    //insert the filename into database
+    await Item.findByIdAndUpdate(req.params.id, {
+      photo: file.name,
     });
   });
+
+  res.status(200).json({
+    success: true,
+    data: file.name,
+  });
+});

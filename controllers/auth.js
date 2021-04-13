@@ -2,56 +2,55 @@ const asyncHandler = require("../middleware/async");
 const ErrorResponse = require("../utils/errorResponse");
 const User = require("../model/user");
 const crypto = require("crypto");
+const path = require("path");
 
 //--------------------------REGISTER USER-----------------
 
 exports.register = asyncHandler(async (req, res, next) => {
-  const { fname,lname,username,password } = req.body;
+  const { firstName, lastName, password, email, address, phone } = req.body;
   const user = await User.create({
-   fname,
-   lname,
-   username,
-   password,
+    firstName, lastName, password, email, address, phone
   });
 
   sendTokenResponse(user, 200, res);
+
 });
 
 //-------------------LOGIN-------------------
 
 exports.login = asyncHandler(async (req, res, next) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!username || !password) {
-    return next(new ErrorResponse("Please provide username and password"), 400);
+  if (!email || !password) {
+    return next(new ErrorResponse("Please provide email and password"), 400);
   }
 
   // Check user
-  const user = await User.findOne({ username: username }).select("+password");
+  const user = await User.findOne({ email: email }).select("+password");
   //because in password field we have set the property select:false , but here we need as password so we added + sign
 
   if (!user) {
     res
-    .status(201)
-    .json({
-      success: false,
-      message: 'Invalid credentails user',
-    });  
+      .status(201)
+      .json({
+        success: false,
+        message: 'Invalid credentails user',
+      });
   }
 
   // const isMatch = await user.matchPassword(password); // decrypt password
-  
-  if (user.password!= password) {
+
+  if (user.password != password) {
     res
-    .status(201)
-    .json({
-      success: false,
-      message: 'Invalid credentails',
-    });
+      .status(201)
+      .json({
+        success: false,
+        message: 'Invalid credentails',
+      });
   }
- else{
-  sendTokenResponse(user, 200, res);
-}
+  else {
+    sendTokenResponse(user, 200, res);
+  }
 });
 
 //------------------LOGOUT--------------
@@ -77,9 +76,62 @@ exports.getMe = asyncHandler(async (req, res, next) => {
   });
 });
 
+//-------------------------User Photo Upload-----------
+
+exports.UserPhotoUpload = asyncHandler(async (req, res, next) => {
+  console.log('user photo upload', req.params.id)
+  const user = await User.findById(req.params.id);
+
+  console.log(user);
+  if (!user) {
+    return next(new ErrorResponse(`No user found with ${req.params.id}`), 404);
+  }
+
+
+  if (!req.files) {
+    return next(new ErrorResponse(`Please upload a file`, 400));
+  }
+
+  const file = req.files.file;
+
+  // Make sure the image is a photo and accept any extension of an image
+  // if (!file.mimetype.startsWith("image")) {
+  //   return next(new ErrorResponse(`Please upload an image`, 400));
+  // }
+
+  // Check file size
+  if (file.size > process.env.MAX_FILE_UPLOAD) {
+    return next(
+      new ErrorResponse(
+        `Please upload an image less than ${process.env.MAX_FILE_UPLOAD}`,
+        400
+      )
+    );
+  }
+
+  file.name = `photo_${user.id}${path.parse(file.name).ext}`;
+
+  file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`, async (err) => {
+    if (err) {
+      console.err(err);
+      return next(new ErrorResponse(`Problem with file upload`, 500));
+    }
+
+    //insert the filename into database
+    await User.findByIdAndUpdate(req.params.id, {
+      photo: file.name,
+    });
+  });
+
+  res.status(200).json({
+    success: true,
+    data: file.name,
+  });
+});
+
 // Get token from model , create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
- 
+
   const token = user.getSignedJwtToken();
 
   const options = {
@@ -102,6 +154,43 @@ const sendTokenResponse = (user, statusCode, res) => {
     .json({
       success: true,
       token,
+      data: user
     });
 
 };
+
+////////-----Update----///////////////////////////////////////////
+exports.updateUser = asyncHandler(async (req, res, next) => {
+  const id = req.params.id
+  // const user = await User.findById(req.params.id);
+  const { firstName, lastName, email, address, phone } = req.body;
+
+  // if (!user) {
+  //   return next(new ErrorResponse("User not found"), 404);
+  // }
+
+  User.findByIdAndUpdate(req.params.id, { firstName, lastName, email, address, phone },{new:true},
+    function (err, docs) {
+      if (err) {
+        res.status(200).json({
+          success: false,
+          error:err.message,
+        });
+      }
+      else {
+        res.status(200).json({
+          success: true,
+          data: docs,
+        });
+      }
+    }
+  )
+
+  //   let newuser = await user.updateOne({_id : id}, {firstName:firstName,lastName:lastName,email:email,address:address,phone:phone})
+  // ;
+  //   res.status(200).json({
+  //     success: true,
+  //     data: newuser,
+  //   });
+
+})
