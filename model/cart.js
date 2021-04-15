@@ -1,26 +1,24 @@
 const mongoose = require('mongoose');
-const Product = require('./proteinModel');
 const date = new Date().toLocaleDateString("en-US").split("/").toString()
-const Booking = mongoose.model('Booking', {
+const Cart = mongoose.model('Cart', {
 
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        require: true
+    itemName : {
+        type : String,
+        required : [true,'Enter food name']
     },
-    Qty: {
-        type: Number,
-        default: 1
-    },
-    productId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Item'
-    },
-    Date: {
+    itemPrice: {
         type: String,
-        default: date
-    }
+        required : [true,'Enter food price']
+        },
+    photo: {
+        type: String,
+        default: "no-photo.jpg",
+      },
+    qantity: {
+        type: Number,
+        default: 1,
+      },
 
 });
 
-module.exports = Booking
+module.exports = Cart
