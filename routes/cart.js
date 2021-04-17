@@ -8,9 +8,9 @@ const {
    deleteCartItems
   } = require("../controllers/cart");
 
-  router.post("/add/cart", addCart);
-  router.get("/cart/all", getCartItems)
-  router.delete("/delete/:id", deleteCartItems);
+  router.post("/add/cart",protect , addCart);
+  router.get("/cart/all",protect, getCartItems)
+  router.delete("/delete/:id",protect, deleteCartItems);
   
   
   module.exports = router
